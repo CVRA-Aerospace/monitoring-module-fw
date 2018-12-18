@@ -1,5 +1,5 @@
 /*
-    ChibiOS - Copyright (C) 2006..2015 Giovanni Di Sirio
+    ChibiOS - Copyright (C) 2006..2018 Giovanni Di Sirio
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -14,14 +14,28 @@
     limitations under the License.
 */
 
-#ifndef _BOARD_H_
-#define _BOARD_H_
+/*
+ * This file has been automatically generated using ChibiStudio board
+ * generator plugin. Do not edit manually.
+ */
+
+#ifndef BOARD_H
+#define BOARD_H
+
+/*===========================================================================*/
+/* Driver constants.                                                         */
+/*===========================================================================*/
+
+/*
+ * Setup for STMicroelectronics STM32 Nucleo32-F042K6 board.
+ */
 
 /*
  * Board identifier.
  */
-#define BOARD_F0
-#define BOARD_NAME                  "Monitoring module RevA"
+#define BOARD_ST_NUCLEO32_F042K6
+#define BOARD_NAME                  "CVRA rocket module RevA"
+
 
 /*
  * Board oscillators-related settings.
@@ -84,6 +98,11 @@
 
 #define GPIOF_OSC_IN                0
 #define GPIOF_OSC_OUT               1
+
+/*
+ * IO lines assignments.
+ */
+#define LINE_LED                    PAL_LINE(GPIOA, 15U)
 
 /*
  * I/O ports initial setup, this configuration is established soon after reset
@@ -398,6 +417,9 @@
                                      PIN_AFIO_AF(GPIOF_OSC_OUT, 0))
 #define VAL_GPIOF_AFRH              0
 
+/*===========================================================================*/
+/* External declarations.                                                    */
+/*===========================================================================*/
 
 #if !defined(_FROM_ASM_)
 #ifdef __cplusplus
@@ -409,4 +431,4 @@ extern "C" {
 #endif
 #endif /* _FROM_ASM_ */
 
-#endif /* _BOARD_H_ */
+#endif /* BOARD_H */

@@ -4,28 +4,50 @@
 #
 
 # Compiler options here.
-USE_OPT = -O2 -ggdb -fomit-frame-pointer -falign-functions=16
+ifeq ($(USE_OPT),)
+	USE_OPT = -O2 -ggdb -fomit-frame-pointer -falign-functions=16
+endif
 
 # C specific options here (added to USE_OPT).
-USE_COPT =
+ifeq ($(USE_COPT),)
+	USE_COPT = 
+endif
 
 # C++ specific options here (added to USE_OPT).
-USE_CPPOPT = -fno-rtti
+ifeq ($(USE_CPPOPT),)
+	USE_CPPOPT = -fno-rtti
+endif
 
 # Enable this if you want the linker to remove unused code and data
-USE_LINK_GC = yes
+ifeq ($(USE_LINK_GC),)
+	USE_LINK_GC = yes
+endif
 
 # Linker extra options here.
-USE_LDOPT =
+ifeq ($(USE_LDOPT),)
+	USE_LDOPT = 
+endif
 
 # Enable this if you want link time optimizations (LTO)
-USE_LTO = no
+ifeq ($(USE_LTO),)
+	USE_LTO = yes
+endif
 
 # If enabled, this option allows to compile the application in THUMB mode.
-USE_THUMB = yes
+ifeq ($(USE_THUMB),)
+	USE_THUMB = yes
+endif
 
 # Enable this if you want to see the full log while compiling.
-USE_VERBOSE_COMPILE = no
+ifeq ($(USE_VERBOSE_COMPILE),)
+	USE_VERBOSE_COMPILE = no
+endif
+
+# If enabled, this option makes the build process faster by not compiling
+# modules not used in the current configuration.
+ifeq ($(USE_SMART_BUILD),)
+	USE_SMART_BUILD = no
+endif
 
 #
 # Build global options
@@ -37,11 +59,20 @@ USE_VERBOSE_COMPILE = no
 
 # Stack size to be allocated to the Cortex-M process stack. This stack is
 # the stack used by the main() thread.
-USE_PROCESS_STACKSIZE = 0x200
+ifeq ($(USE_PROCESS_STACKSIZE),)
+	USE_PROCESS_STACKSIZE = 0x200
+endif
 
 # Stack size to the allocated to the Cortex-M main/exceptions stack. This
 # stack is used for processing interrupts and exceptions.
-USE_EXCEPTIONS_STACKSIZE = 0x400
+ifeq ($(USE_EXCEPTIONS_STACKSIZE),)
+	USE_EXCEPTIONS_STACKSIZE = 0x200
+endif
+
+# Enables the use of FPU (no, softfp, hard).
+ifeq ($(USE_FPU),)
+	USE_FPU = no
+endif
 
 #
 # Architecture or project specific options
@@ -56,32 +87,36 @@ PROJECT = ch
 
 # Imported source files and paths
 CHIBIOS = ChibiOS
+
+# Licensing files.
+include $(CHIBIOS)/os/license/license.mk
+# Startup files.
+include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/mk/startup_stm32f0xx.mk
+# HAL-OSAL files (optional).
 include $(CHIBIOS)/os/hal/hal.mk
 include $(CHIBIOS)/os/hal/ports/STM32/STM32F0xx/platform.mk
+#include $(CHIBIOS)/os/hal/boards/ST_NUCLEO32_F042K6/board.mk
 include $(CHIBIOS)/os/hal/osal/rt/osal.mk
+# RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
-include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_stm32f0xx.mk
-# include $(CHIBIOS)/test/rt/test.mk
+include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/port_v6m.mk
+# Other files (optional).
+#include $(CHIBIOS)/test/lib/test.mk
+#include $(CHIBIOS)/test/rt/rt_test.mk
+#include $(CHIBIOS)/test/oslib/oslib_test.mk
 
 # Define linker script file here
-LDSCRIPT = STM32F042x6.ld
+LDSCRIPT= $(STARTUPLD)/STM32F042x6.ld
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CSRC = $(PORTSRC) \
-       $(KERNSRC) \
-       $(TESTSRC) \
-       $(HALSRC) \
-       $(OSALSRC) \
-       $(PLATFORMSRC) \
-       $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
-       $(CHIBIOS)/os/various/shell.c
-
-CSRC += src/board.c src/main.c
+CSRC = $(ALLCSRC) \
+			 src/board.c \
+			 src/main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CPPSRC =
+CPPSRC = $(ALLCPPSRC)
 
 # C sources to be compiled in ARM mode regardless of the global setting.
 # NOTE: Mixing ARM and THUMB mode enables the -mthumb-interwork compiler
@@ -104,12 +139,10 @@ TCSRC =
 TCPPSRC =
 
 # List ASM source files here
-ASMSRC = $(PORTASM)
+ASMSRC = $(ALLASMSRC)
+ASMXSRC = $(ALLXASMSRC)
 
-INCDIR = $(PORTINC) $(KERNINC) $(TESTINC) \
-         $(HALINC) $(OSALINC) $(PLATFORMINC) \
-         $(CHIBIOS)/os/various $(CHIBIOS)/os/hal/lib/streams \
-         src
+INCDIR = $(ALLINC) src
 
 #
 # Project, sources and paths
@@ -125,16 +158,18 @@ MCU  = cortex-m0
 TRGT = arm-none-eabi-
 CC   = $(TRGT)gcc
 CPPC = $(TRGT)g++
+# Enable loading with g++ only if you need C++ runtime support.
+# NOTE: You can use C++ even without C++ support if you are careful. C++
+#       runtime support makes code size explode.
 LD   = $(TRGT)gcc
 #LD   = $(TRGT)g++
-CP   = $(TRGT)objcopy  -j startup -j constructors -j destructors -j .text -j .ARM.extab -j .ARM.exidx -j .eh_frame_hdr -j .eh_frame -j .textalign -j .data
+CP   = $(TRGT)objcopy
 AS   = $(TRGT)gcc -x assembler-with-cpp
 AR   = $(TRGT)ar
 OD   = $(TRGT)objdump
 SZ   = $(TRGT)size
 HEX  = $(CP) -O ihex
 BIN  = $(CP) -O binary
-# BIN  = $(CP) -O binary -j startup -j constructors -j destructors -j .text -j .ARM.extab -j .ARM.exidx -j .eh_frame_hdr -j .eh_frame -j .textalign -j .data
 
 # ARM-specific options here
 AOPT =
@@ -143,10 +178,10 @@ AOPT =
 TOPT = -mthumb -DTHUMB
 
 # Define C warning options here
-CWARN = -Wall -Wextra -Wstrict-prototypes
+CWARN = -Wall -Wextra -Wundef -Wstrict-prototypes
 
 # Define C++ warning options here
-CPPWARN = -Wall -Wextra
+CPPWARN = -Wall -Wextra -Wundef
 
 #
 # Compiler settings
@@ -175,5 +210,9 @@ ULIBS =
 # End of user defines
 ##############################################################################
 
-RULESPATH = $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC
+RULESPATH = $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC
 include $(RULESPATH)/rules.mk
+
+.PHONY: flash
+flash: $(BUILDDIR)/$(PROJECT).elf
+	openocd -f openocd.cfg -c "program $(BUILDDIR)/$(PROJECT).elf verify reset" -c "shutdown"
